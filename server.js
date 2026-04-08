@@ -31,29 +31,26 @@ const LOW_SIGNAL_QUERY_TERM_WEIGHTS = new Map([
   ["関連する", 0.3],
   ["関係する", 0.3],
 
-  ["効果", 0.4],
+  ["規定", 0.3],
+  ["規定因", 0.3],
+  ["規定要因", 0.3],
+  ["予測", 0.3],
+  ["予測因", 0.3],
+  ["予測要因", 0.3],
+  ["説明", 0.3],
+
+  ["検討", 0.3],
+  ["分析", 0.3],
+  ["研究", 0.3],
+  ["実証", 0.3],
+  ["比較", 0.3],
+  ["目的", 0.3],
+  ["方法", 0.3],
+  ["結果", 0.3],
+  ["考察", 0.3],
+
+  ["効果", 0.5],
   ["有効性", 0.5],
-  ["妥当性", 0.5],
-  ["信頼性", 0.5],
-
-  ["規定", 0.4],
-  ["規定因", 0.4],
-  ["規定要因", 0.4],
-  ["予測", 0.4],
-  ["予測因", 0.4],
-  ["予測要因", 0.4],
-  ["説明", 0.4],
-
-  ["検討", 0.4],
-  ["分析", 0.4],
-  ["研究", 0.5],
-  ["実証", 0.4],
-  ["比較", 0.5],
-  ["評価", 0.5],
-  ["目的", 0.4],
-  ["方法", 0.4],
-  ["結果", 0.4],
-  ["考察", 0.4],
 
   ["association", 0.3],
   ["associations", 0.3],
@@ -64,30 +61,28 @@ const LOW_SIGNAL_QUERY_TERM_WEIGHTS = new Map([
   ["impact", 0.3],
   ["impacts", 0.3],
 
-  ["effect", 0.4],
-  ["effects", 0.4],
+  ["predict", 0.3],
+  ["predictor", 0.3],
+  ["predictors", 0.3],
+  ["determinant", 0.3],
+  ["determinants", 0.3],
+
+  ["examine", 0.3],
+  ["examined", 0.3],
+  ["analysis", 0.3],
+  ["study", 0.3],
+  ["studies", 0.3],
+  ["research", 0.3],
+  ["investigation", 0.3],
+
+  ["effect", 0.5],
+  ["effects", 0.5],
   ["effectiveness", 0.5],
-  ["validity", 0.5],
-  ["reliability", 0.5],
-
-  ["predict", 0.4],
-  ["predictor", 0.4],
-  ["predictors", 0.4],
-  ["determinant", 0.4],
-  ["determinants", 0.4],
-
-  ["examine", 0.4],
-  ["examined", 0.4],
-  ["analysis", 0.4],
-  ["study", 0.5],
-  ["studies", 0.5],
-  ["research", 0.5],
-  ["investigation", 0.4]
 ]);
 
-const ORIGINAL_TERM_BOOST = 8.0;
+const ORIGINAL_TERM_BOOST = 10.0;
 const EXPANDED_TERM_WEIGHT = 1.0;
-const LOW_SIGNAL_ORIGINAL_CAP = 1.5;
+const LOW_SIGNAL_ORIGINAL_CAP = 0.5;
 
 function normalizeText(text) {
   return String(text || "")
