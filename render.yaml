@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: jjlawpsychology-bm25-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATA_URL
+        sync: false
+      - key: API_KEY
+        sync: false
