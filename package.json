@@ -1,0 +1,13 @@
+{
+  "name": "jjlawpsychology-bm25-api",
+  "version": "1.0.0",
+  "description": "BM25 search API for Journal of Law and Psychology metadata",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
