@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: jjlawpsychology-bm25-api
+    name: https://corpus-mnc8.onrender.com/
     runtime: node
     plan: free
     buildCommand: npm install
