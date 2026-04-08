@@ -12,6 +12,35 @@ if (!DATA_URL) {
   process.exit(1);
 }
 
+const LOW_SIGNAL_QUERY_TERM_WEIGHTS = new Map([
+  ["関連", 0.3],
+  ["関係", 0.3],
+  ["相関", 0.3],
+  ["影響", 0.3],
+  ["関連性", 0.3],
+  ["関連する", 0.3],
+  ["関係する", 0.3],
+  ["効果", 0.4],
+  ["規定", 0.4],
+  ["規定因", 0.4],
+  ["予測", 0.4],
+  ["予測因", 0.4],
+  ["説明", 0.4],
+  ["association", 0.3],
+  ["associations", 0.3],
+  ["relationship", 0.3],
+  ["relationships", 0.3],
+  ["correlation", 0.3],
+  ["correlations", 0.3],
+  ["effect", 0.4],
+  ["effects", 0.4],
+  ["impact", 0.3],
+  ["impacts", 0.3],
+  ["predict", 0.4],
+  ["predictor", 0.4],
+  ["predictors", 0.4]
+]);
+
 function normalizeText(text) {
   return String(text || "")
     .toLowerCase()
@@ -30,18 +59,19 @@ function tokenize(text) {
     .map((x) => x.trim())
     .filter(Boolean);
 
-  const merged = [...latinTokens, ...japaneseChunks]
-    .filter((x) => x.length >= 1);
-
-  return merged;
+  return [...latinTokens, ...japaneseChunks].filter((x) => x.length >= 1);
 }
 
 function buildDocText(doc) {
   return [
     doc.title,
     doc.subtitle,
+    doc.authors,
+    doc.publication_year,
+    doc.doi,
     doc.keywords,
-    doc.abstract
+    doc.abstract,
+    `${doc.authors || ""} ${doc.publication_year || ""}`
   ].join(" ");
 }
 
@@ -81,9 +111,26 @@ function bm25Build(docs) {
   return { built, df, N, avgdl };
 }
 
-function bm25Search(index, query, topK = 5, k1 = 1.5, b = 0.75) {
-  const qTokens = [...new Set(tokenize(query))];
-  if (qTokens.length === 0) return [];
+function buildQueryWeights(query, userQuery = "") {
+  const expandedTokens = tokenize(query);
+  const originalTokenSet = new Set(tokenize(userQuery));
+  const weights = new Map();
+
+  for (const token of expandedTokens) {
+    const originalBoost = originalTokenSet.has(token) ? 3.0 : 1.0;
+    const lowSignalWeight = LOW_SIGNAL_QUERY_TERM_WEIGHTS.get(token) || 1.0;
+    const finalWeight = originalBoost * lowSignalWeight;
+
+    weights.set(token, (weights.get(token) || 0) + finalWeight);
+  }
+
+  return weights;
+}
+
+function bm25Search(index, query, topK = 5, userQuery = "", k1 = 1.5, b = 0.75) {
+  const qWeights = buildQueryWeights(query, userQuery);
+  const qTerms = [...qWeights.keys()];
+  if (qTerms.length === 0) return [];
 
   const results = [];
 
@@ -91,21 +138,25 @@ function bm25Search(index, query, topK = 5, k1 = 1.5, b = 0.75) {
     let score = 0;
     const matchedTerms = [];
 
-    for (const term of qTokens) {
+    for (const term of qTerms) {
       const freq = item.tf.get(term) || 0;
       if (freq === 0) continue;
 
       const df = index.df.get(term) || 0;
       const idf = Math.log(1 + (index.N - df + 0.5) / (df + 0.5));
-      const denom = freq + k1 * (1 - b + b * (item.length / (index.avgdl || 1)));
-      score += idf * ((freq * (k1 + 1)) / denom);
+      const denom =
+        freq + k1 * (1 - b + b * (item.length / (index.avgdl || 1)));
+      const baseScore = idf * ((freq * (k1 + 1)) / denom);
+      const termWeight = qWeights.get(term) || 1;
+
+      score += termWeight * baseScore;
       matchedTerms.push(term);
     }
 
     if (score > 0) {
       results.push({
         score,
-        matched_terms: matchedTerms,
+        matched_terms: [...new Set(matchedTerms)],
         document: item.doc
       });
     }
@@ -196,18 +247,31 @@ app.post("/reload", authMiddleware, async (req, res) => {
 app.post("/search", authMiddleware, (req, res) => {
   try {
     const query = String(req.body.query || "").trim();
-    const top_k = Number(req.body.top_k || 5);
+    const user_query = String(req.body.user_query || "").trim();
+    let top_k = Number(req.body.top_k || 5);
 
     if (!query) {
       return res.status(400).json({ error: "query is required" });
     }
 
+    if (!user_query) {
+      return res.status(400).json({ error: "user_query is required" });
+    }
+
+    if (!Number.isFinite(top_k)) {
+      top_k = 5;
+    }
+    top_k = Math.max(1, Math.min(20, Math.floor(top_k)));
+
     if (!index) {
       return res.status(503).json({ error: "index not loaded" });
     }
 
-    const results = bm25Search(index, query, top_k);
-    const queryTerms = [...new Set(tokenize(query))];
+    const results = bm25Search(index, query, top_k, user_query);
+    const queryTerms = [...new Set([
+      ...tokenize(query),
+      ...tokenize(user_query)
+    ])];
 
     const formatted = results.map((r, i) => ({
       rank: i + 1,
@@ -230,6 +294,7 @@ app.post("/search", authMiddleware, (req, res) => {
 
     res.json({
       query,
+      user_query,
       top_k,
       total_records: corpus.length,
       results: formatted
