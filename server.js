@@ -3,6 +3,11 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(new Date().toISOString(), req.method, req.url);
+  next();
+});
+
 const PORT = process.env.PORT || 3000;
 const DATA_URL = process.env.DATA_URL;
 const API_KEY = process.env.API_KEY || "";
@@ -329,9 +334,12 @@ app.post("/reload", authMiddleware, async (req, res) => {
 
 app.post("/search", authMiddleware, (req, res) => {
   try {
-    const query = String(req.body.query || "").trim();
-    const user_query = String(req.body.user_query || "").trim();
-    let top_k = Number(req.body.top_k || 5);
+    console.log("headers:", req.headers);
+    console.log("body:", req.body);
+
+    const query = String(req.body?.query || "").trim();
+    const user_query = String(req.body?.user_query || "").trim();
+    let top_k = Number(req.body?.top_k || 5);
 
     if (!query) {
       return res.status(400).json({ error: "query is required" });
@@ -383,19 +391,9 @@ app.post("/search", authMiddleware, (req, res) => {
       results: formatted
     });
   } catch (err) {
+    console.error("search error:", err);
     res.status(500).json({
       error: String(err.message || err)
     });
   }
 });
-
-loadCorpus()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
