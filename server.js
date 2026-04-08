@@ -40,8 +40,6 @@ function buildDocText(doc) {
   return [
     doc.title,
     doc.subtitle,
-    doc.authors,
-    doc.affiliations,
     doc.keywords,
     doc.abstract
   ].join(" ");
