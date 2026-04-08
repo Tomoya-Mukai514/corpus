@@ -397,3 +397,14 @@ app.post("/search", authMiddleware, (req, res) => {
     });
   }
 });
+
+loadCorpus()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
